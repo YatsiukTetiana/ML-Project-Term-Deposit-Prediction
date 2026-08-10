@@ -488,12 +488,11 @@ def transform_data(
     train_inputs: pd.DataFrame,
     val_inputs: pd.DataFrame,
     test_inputs: pd.DataFrame
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Fit the preprocessor on training data and transform all datasets.
 
-    The validation and test sets are transformed using the preprocessing
-    parameters learned from the training set.
+    The original row indices and generated feature names are preserved.
 
     Parameters
     ----------
@@ -508,19 +507,31 @@ def transform_data(
 
     Returns
     -------
-    Tuple[np.ndarray, np.ndarray, np.ndarray]
+    Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]
         Processed training, validation, and test data.
     """
-    train_processed = preprocessor.fit_transform(
-        train_inputs
+    train_array = preprocessor.fit_transform(train_inputs)
+    val_array = preprocessor.transform(val_inputs)
+    test_array = preprocessor.transform(test_inputs)
+
+    feature_names = preprocessor.get_feature_names_out()
+
+    train_processed = pd.DataFrame(
+        train_array,
+        columns=feature_names,
+        index=train_inputs.index
     )
 
-    val_processed = preprocessor.transform(
-        val_inputs
+    val_processed = pd.DataFrame(
+        val_array,
+        columns=feature_names,
+        index=val_inputs.index
     )
 
-    test_processed = preprocessor.transform(
-        test_inputs
+    test_processed = pd.DataFrame(
+        test_array,
+        columns=feature_names,
+        index=test_inputs.index
     )
 
     return (
@@ -536,9 +547,9 @@ def process_data(
     target_col: str = "y",
     random_state: int = 42
 ) -> Tuple[
-    np.ndarray,
-    np.ndarray,
-    np.ndarray,
+    pd.DataFrame,
+    pd.DataFrame,
+    pd.DataFrame,
     pd.Series,
     pd.Series,
     pd.Series,
@@ -570,11 +581,11 @@ def process_data(
     Returns
     -------
     Tuple
-        train_processed : np.ndarray
+        train_processed : pd.DataFrame
             Processed training features.
-        val_processed : np.ndarray
+        val_processed : pd.DataFrame
             Processed validation features.
-        test_processed : np.ndarray
+        test_processed : pd.DataFrame
             Processed test features.
         train_targets : pd.Series
             Training targets.
