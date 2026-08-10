@@ -1,10 +1,10 @@
-from typing import Tuple
-
+from typing import Callable, Dict, List, Tuple, Union
+import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from sklearn.base import ClassifierMixin
+from sklearn.base import ClassifierMixin, clone
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
@@ -392,3 +392,265 @@ def model_evaluate(
     )
 
     return prob_train, prob_test
+
+ModelCollection = Union[
+    Dict[str, ClassifierMixin],
+    List[ClassifierMixin]
+]
+
+PreprocessFunction = Callable[..., tuple]
+
+
+def calculate_model_metrics(
+    model: ClassifierMixin,
+    inputs: np.ndarray,
+    targets: np.ndarray
+) -> Dict[str, float]:
+    """
+    Calculate classification metrics for a trained model.
+
+    Args:
+        model: Trained classification model.
+        inputs: Processed input features.
+        targets: True target labels.
+
+    Returns:
+        Dictionary containing accuracy, precision, recall, F1,
+        AUROC, and Average Precision scores.
+    """
+    preds, pred_proba = predict_data(model, inputs)
+
+    return {
+        "Accuracy": calculate_accuracy(targets, preds),
+        "Precision": calculate_precision(targets, preds),
+        "Recall": calculate_recall(targets, preds),
+        "F1": calculate_f1(targets, preds),
+        "AUROC": calculate_auroc(targets, pred_proba),
+        "Average Precision": calculate_average_precision(
+            targets,
+            pred_proba
+        )
+    }
+
+
+def get_model_items(
+    models: ModelCollection
+) -> List[Tuple[str, ClassifierMixin]]:
+    """
+    Convert different model collection formats into a standard list.
+
+    Args:
+        models: Models to compare. Can be either:
+            - dictionary: {"Logistic Regression": model, ...}
+            - list: [model1, model2, ...]
+
+    Returns:
+        List of (model_name, model) pairs.
+    """
+    if isinstance(models, dict):
+        return list(models.items())
+
+    return [
+        (model.__class__.__name__, model)
+        for model in models
+    ]
+
+
+def process_data(
+    raw_df: pd.DataFrame,
+    encoding: str,
+    preprocess_function: PreprocessFunction
+) -> Tuple[
+    np.ndarray,
+    np.ndarray,
+    np.ndarray,
+    np.ndarray
+]:
+    """
+    Preprocess data using the selected encoding method.
+
+    This function provides a single entry point for preprocessing
+    data before model training and evaluation.
+
+    Args:
+        raw_df: Original dataframe before preprocessing.
+        encoding: Encoding method, for example "onehot" or "ordinal".
+        preprocess_function: Function responsible for preprocessing
+            the dataframe.
+
+    Returns:
+        A tuple containing:
+            - Training input features.
+            - Training target labels.
+            - Test input features.
+            - Test target labels.
+    """
+    (
+        train_inputs,
+        train_targets,
+        test_inputs,
+        test_targets,
+        *_
+    ) = preprocess_function(
+        raw_df,
+        encoding=encoding
+    )
+
+    return (
+        train_inputs,
+        train_targets,
+        test_inputs,
+        test_targets
+    )
+
+
+def train_model(
+    model: ClassifierMixin,
+    train_inputs: np.ndarray,
+    train_targets: np.ndarray
+) -> ClassifierMixin:
+    """
+    Clone and train a classification model.
+
+    Args:
+        model: Model to clone and train.
+        train_inputs: Training input features.
+        train_targets: Training target labels.
+
+    Returns:
+        A trained clone of the input model.
+    """
+    current_model = clone(model)
+
+    current_model.fit(
+        train_inputs,
+        train_targets
+    )
+
+    return current_model
+
+
+def create_model_result(
+    model_name: str,
+    encoding: str,
+    train_metrics: Dict[str, float],
+    test_metrics: Dict[str, float]
+) -> Dict[str, Union[str, float]]:
+    """
+    Create a result record for one model and encoding combination.
+
+    Args:
+        model_name: Name of the model.
+        encoding: Encoding method used for preprocessing.
+        train_metrics: Metrics calculated on the training set.
+        test_metrics: Metrics calculated on the test set.
+
+    Returns:
+        Dictionary containing training and test metrics.
+    """
+    return {
+        "Model": model_name,
+        "Encoding": encoding,
+
+        "Train Accuracy": train_metrics["Accuracy"],
+        "Test Accuracy": test_metrics["Accuracy"],
+
+        "Train Precision": train_metrics["Precision"],
+        "Test Precision": test_metrics["Precision"],
+
+        "Train Recall": train_metrics["Recall"],
+        "Test Recall": test_metrics["Recall"],
+
+        "Train F1": train_metrics["F1"],
+        "Test F1": test_metrics["F1"],
+
+        "Train AUROC": train_metrics["AUROC"],
+        "Test AUROC": test_metrics["AUROC"],
+
+        "Train AP": train_metrics["Average Precision"],
+        "Test AP": test_metrics["Average Precision"]
+    }
+
+
+def compare_models_and_encodings(
+    raw_df: pd.DataFrame,
+    models: ModelCollection,
+    encodings: List[str],
+    preprocess_function: PreprocessFunction
+) -> pd.DataFrame:
+    """
+    Train and compare multiple models using multiple encodings.
+
+    Each model is trained independently for every encoding method.
+    Training and test metrics are calculated and returned as a
+    pandas DataFrame.
+
+    Args:
+        raw_df: Original dataframe before preprocessing.
+        models: Models to compare. Can be either:
+            - dictionary: {"Logistic Regression": model, ...}
+            - list: [model1, model2, ...]
+        encodings: Encoding methods to compare, for example
+            ["onehot", "ordinal"].
+        preprocess_function: Function responsible for preprocessing
+            the data according to the selected encoding.
+
+    Returns:
+        DataFrame containing training and test metrics for every
+        model-encoding combination.
+    """
+    model_items = get_model_items(models)
+    results = []
+
+    for encoding in encodings:
+
+        print("=" * 70)
+        print(f"ENCODING: {encoding}")
+        print("=" * 70)
+
+        (
+            train_inputs,
+            train_targets,
+            test_inputs,
+            test_targets
+        ) = process_data(
+            raw_df,
+            encoding,
+            preprocess_function
+        )
+
+        for model_name, model in model_items:
+
+            print("\n" + "-" * 70)
+            print(f"MODEL: {model_name}")
+            print(f"ENCODING: {encoding}")
+            print("-" * 70)
+
+            trained_model = train_model(
+                model,
+                train_inputs,
+                train_targets
+            )
+
+            train_metrics = calculate_model_metrics(
+                trained_model,
+                train_inputs,
+                train_targets
+            )
+
+            test_metrics = calculate_model_metrics(
+                trained_model,
+                test_inputs,
+                test_targets
+            )
+
+            result = create_model_result(
+                model_name,
+                encoding,
+                train_metrics,
+                test_metrics
+            )
+
+            results.append(result)
+
+    return pd.DataFrame(results)
