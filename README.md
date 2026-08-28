@@ -57,9 +57,10 @@ Project is dedicated to create a binary classification model predicting the bank
    In case when after choosing specific threshold model results are not quality enough, suggested either to change the main quality metric and model with highest value of this metric or develop XGBoost model by improving hyperparameters and feature importances.
 
    
+# Project Files
+- Full project Jupyter Notebook: [Mid_term_Project.ipynb]()  
 
-Full project Jupyter Notebook: 
 Custom python modules:
-- Preprocessign original dataset, splitting to train, test, and validation subsets:
+- Preprocessign original dataset, splitting to train, test, and validation subsets: [process_bank_deposit.py]()
 - Creating, training, and getting models predictions: [model_evaluation.py](https://github.com/YatsiukTetiana/ML-Project-Term-Deposit-Prediction/blob/main/model_evaluation.py)
-- Comparing models preformance by key metrics:
+- Comparing models preformance by key metrics: [models_comparison.py](https://github.com/YatsiukTetiana/ML-Project-Term-Deposit-Prediction/blob/main/models_comparison.py)
