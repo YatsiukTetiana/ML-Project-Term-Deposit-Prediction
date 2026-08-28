@@ -56,13 +56,10 @@ Project is dedicated to create a binary classification model predicting the bank
    Analyzed model errors rate with different thresholds, suggested to choose threshold = 0.25 for model predictions. Final decision on threshold depends on cost of failures/success for the company.
    In case when after choosing specific threshold model results are not quality enough, suggested either to change the main quality metric and model with highest value of this metric or develop XGBoost model by improving hyperparameters and feature importances.
 
-
-
-
    
 
 Full project Jupyter Notebook: 
 Custom python modules:
 - Preprocessign original dataset, splitting to train, test, and validation subsets:
-- Creating, training, and getting models predictions:
+- Creating, training, and getting models predictions: [model_evaluation.py](https://github.com/YatsiukTetiana/ML-Project-Term-Deposit-Prediction/blob/main/model_evaluation.py)
 - Comparing models preformance by key metrics:
