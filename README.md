@@ -43,7 +43,20 @@ Project is dedicated to create a binary classification model predicting the bank
      The highest AUROC, Precision, and Average Precision. Is recommended for being chosen.
      <img width="1007" height="130" alt="image" src="https://github.com/user-attachments/assets/09ce5e21-e8ae-4ba5-b53f-ca93919396a3" />
 
-  
+6. **Feature Importance Analysis**
+   For chosen XGBoost model, analyzed feature importance with built-in method.
+   Top features by influence on target value are economical metrics, previous contact with a client, and success in previous campaign.
+
+7. **Feature Influence on Model Prediction Analysis**
+   Analyzed and displayed the direction and strenght of features influence on model predictions utilizing SHAP library.
+   High negative influence: *nr.employed*, *emp.var.rate*, *cons.conf.idx*, *euribor3m*, day of call - Monday, high volume of calls during current campaign.
+   High positive influence: celluar telephone type of contact, contacting client dureng previous campaigns
+
+8. **Model Prediction Errors Analysis**
+   Analyzed model errors rate with different thresholds, suggested to choose threshold = 0.25 for model predictions. Final decision on threshold depends on cost of failures/success for the company.
+   In case when after choosing specific threshold model results are not quality enough, suggested either to change the main quality metric and model with highest value of this metric or develop XGBoost model by improving hyperparameters and feature importances.
+
+
 
 
    
