@@ -342,53 +342,81 @@ def evaluate_dataset(
 
 def model_evaluate(
     model: ClassifierMixin,
-    train_inputs: np.ndarray,
-    test_inputs: np.ndarray,
-    train_targets: np.ndarray,
-    test_targets: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+    train_inputs: np.ndarray | None = None,
+    train_targets: np.ndarray | None = None,
+    val_inputs: np.ndarray | None = None,
+    val_targets: np.ndarray | None = None,
+    test_inputs: np.ndarray | None = None,
+    test_targets: np.ndarray | None = None
+) -> Tuple[np.ndarray | None, np.ndarray | None, np.ndarray | None]:
     """
-    Generate predictions and evaluate a trained classification model.
-
-    The function generates predictions and probabilities for both
-    training and test datasets, then calculates and visualizes
-    classification metrics.
+    Generate predictions and evaluate a trained classification model
+    on any combination of training, validation, and test datasets.
 
     Args:
         model: Trained classification model with predict() and
             predict_proba() methods.
-        train_inputs: Processed training features.
-        test_inputs: Processed test features.
-        train_targets: Training target labels.
-        test_targets: Test target labels.
+
+        train_inputs: Processed training features. Optional.
+        train_targets: Training target labels. Optional.
+
+        val_inputs: Processed validation features. Optional.
+        val_targets: Validation target labels. Optional.
+
+        test_inputs: Processed test features. Optional.
+        test_targets: Test target labels. Optional.
 
     Returns:
         A tuple containing:
-            - Training positive-class probabilities.
-            - Test positive-class probabilities.
+            - Training positive-class probabilities, or None.
+            - Validation positive-class probabilities, or None.
+            - Test positive-class probabilities, or None.
     """
-    preds_train, prob_train = predict_data(
-        model,
-        train_inputs
-    )
 
-    preds_test, prob_test = predict_data(
-        model,
-        test_inputs
-    )
+    prob_train = None
+    prob_val = None
+    prob_test = None
 
-    evaluate_dataset(
-        train_targets,
-        preds_train,
-        prob_train,
-        "Training"
-    )
+    # Evaluate training dataset if provided
+    if train_inputs is not None and train_targets is not None:
+        preds_train, prob_train = predict_data(
+            model,
+            train_inputs
+        )
 
-    evaluate_dataset(
-        test_targets,
-        preds_test,
-        prob_test,
-        "Test"
-    )
+        evaluate_dataset(
+            train_targets,
+            preds_train,
+            prob_train,
+            "Training"
+        )
 
-    return prob_train, prob_test
+    # Evaluate validation dataset if provided
+    if val_inputs is not None and val_targets is not None:
+        preds_val, prob_val = predict_data(
+            model,
+            val_inputs
+        )
+
+        evaluate_dataset(
+            val_targets,
+            preds_val,
+            prob_val,
+            "Validation"
+        )
+
+    # Evaluate test dataset if provided
+    if test_inputs is not None and test_targets is not None:
+        preds_test, prob_test = predict_data(
+            model,
+            test_inputs
+        )
+
+        evaluate_dataset(
+            test_targets,
+            preds_test,
+            prob_test,
+            "Test"
+        )
+
+    return prob_train, prob_val, prob_test
